@@ -49,6 +49,19 @@ export default function Index() {
     if (user) fetchDashboardData();
   }, [user]);
 
+  // Re-fetch when page becomes visible again (e.g. tab switch or navigate back)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && user) {
+        fetchDashboardData();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    // Also fetch on mount (covers navigation back from Messages)
+    if (user) fetchDashboardData();
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
   const fetchDashboardData = async () => {
     if (!user) return;
 

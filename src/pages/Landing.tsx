@@ -402,22 +402,21 @@ export default function Landing() {
           <p style={{ ...captionSmall, marginTop: 16 }}>
             Free forever. No ads. No data selling.
           </p>
-          {/* App screenshot placeholder */}
+          {/* App screenshot */}
           <div
             style={{
               maxWidth: 800,
               margin: "48px auto 0",
-              aspectRatio: "16/9",
-              backgroundColor: GRAY_BG,
               borderRadius: 20,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              overflow: "hidden",
+              boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
             }}
           >
-            <span style={{ fontFamily: FONT, fontSize: 15, color: CAPTION_COLOR }}>
-              [App Screenshot — Matching Dashboard]
-            </span>
+            <img
+              src="/app_dashboard.png"
+              alt="Yata Mitr matching dashboard"
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
           </div>
         </div>
       </section>

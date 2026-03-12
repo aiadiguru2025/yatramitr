@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ const LANGUAGES = [
 ];
 
 export default function Profile() {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -138,6 +140,7 @@ export default function Profile() {
           <Button variant="ghost" size="icon" onClick={async () => {
             try {
               await signOut();
+              navigate("/auth", { replace: true });
             } catch {
               toast({ title: "Logout failed", variant: "destructive" });
             }

@@ -64,13 +64,13 @@ function FlapChar({ target, delay }: { target: string; delay: number }) {
     <span
       style={{
         display: "inline-block",
-        width: "clamp(22px, 3.5vw, 44px)",
-        height: "clamp(32px, 5vw, 64px)",
-        lineHeight: "clamp(32px, 5vw, 64px)",
+        width: "clamp(14px, 3.5vw, 44px)",
+        height: "clamp(20px, 5vw, 64px)",
+        lineHeight: "clamp(20px, 5vw, 64px)",
         background: "#1A1A1C",
         color: display === " " ? "transparent" : "#F5E6A3",
         fontFamily: "'SF Mono', 'Fira Code', 'Courier New', monospace",
-        fontSize: "clamp(20px, 3.2vw, 40px)",
+        fontSize: "clamp(12px, 3.2vw, 40px)",
         fontWeight: 700,
         textAlign: "center",
         borderRadius: 3,
@@ -133,7 +133,8 @@ function DepartureBoard() {
         flexDirection: "column",
         alignItems: "center",
         gap: "clamp(6px, 0.8vw, 10px)",
-        padding: "clamp(20px, 3vw, 40px) clamp(16px, 2.5vw, 32px)",
+        padding: "clamp(12px, 3vw, 40px) clamp(10px, 2.5vw, 32px)",
+        maxWidth: "100%",
         background: "linear-gradient(180deg, #0D0D0D 0%, #1A1A1C 100%)",
         borderRadius: 14,
         boxShadow: "0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)",
@@ -374,7 +375,7 @@ export default function Landing() {
         style={{
           opacity: 0,
           transition: "opacity 400ms ease",
-          padding: "clamp(80px, 12vw, 120px) 24px",
+          padding: "clamp(80px, 12vw, 120px) clamp(12px, 3vw, 24px)",
           textAlign: "center",
           backgroundColor: WHITE,
         }}

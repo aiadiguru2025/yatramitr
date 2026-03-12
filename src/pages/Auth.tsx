@@ -92,7 +92,7 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header strip */}
       <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
           <div className="w-8 h-8 rounded-full gradient-hero flex items-center justify-center">
             <span className="text-sm font-bold text-primary-foreground">Y</span>
           </div>

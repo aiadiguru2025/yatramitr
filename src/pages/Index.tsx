@@ -116,7 +116,7 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="px-6 pt-6 pb-4">
+      <header className="px-4 sm:px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-11 w-11 ring-2 ring-primary/20">
@@ -143,7 +143,7 @@ export default function Index() {
         </div>
       </header>
 
-      <div className="px-6 space-y-6">
+      <div className="px-4 sm:px-6 space-y-5 sm:space-y-6">
         {/* Notification banners */}
         {(pendingCount > 0 || unreadCount > 0) && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
@@ -179,7 +179,7 @@ export default function Index() {
         )}
 
         {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {statCards.map(({ icon: Icon, label, value, color, bg, onClick }, i) => (
             <motion.div
               key={label}
@@ -190,11 +190,11 @@ export default function Index() {
               className={onClick ? "cursor-pointer" : ""}
             >
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4 text-center">
-                  <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mx-auto mb-2`}>
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 ${bg} rounded-xl flex items-center justify-center mx-auto mb-1.5 sm:mb-2`}>
                     <Icon className={`w-5 h-5 ${color}`} />
                   </div>
-                  <div className="font-bold text-2xl text-foreground">
+                  <div className="font-bold text-xl sm:text-2xl text-foreground">
                     {statsLoading ? "–" : value}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">{label}</div>

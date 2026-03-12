@@ -141,7 +141,7 @@ export default function Trips() {
         {showForm && (
           <Card>
             <CardContent className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>From City *</Label>
                   <Input value={form.origin_city} onChange={e => setForm(f => ({ ...f, origin_city: e.target.value }))} />
@@ -151,7 +151,7 @@ export default function Trips() {
                   <Input value={form.dest_city} onChange={e => setForm(f => ({ ...f, dest_city: e.target.value }))} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Travel Date *</Label>
                   <Input type="date" value={form.travel_date} onChange={e => setForm(f => ({ ...f, travel_date: e.target.value }))} />

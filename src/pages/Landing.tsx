@@ -512,14 +512,15 @@ export default function Landing() {
                 title: "They need it. They offer it.",
                 desc: "She needs help with forms. He's flown this route 12 times.",
               },
-            ].map((item, i) => (
+            ].map((item) => (
               <div
                 key={item.label}
                 style={{
-                  flex: 1,
+                  flex: "1 1 240px",
                   textAlign: "center",
-                  padding: "0 clamp(16px, 3vw, 32px)",
-                  borderLeft: i > 0 ? `1px solid ${DIVIDER}` : "none",
+                  padding: "16px clamp(16px, 3vw, 32px)",
+                  borderLeft: "none",
+                  minWidth: 0,
                 }}
               >
                 <div
@@ -564,8 +565,8 @@ export default function Landing() {
               { n: "2", title: "See your matches", desc: "Ranked by compatibility. Same flight = top priority." },
               { n: "3", title: "Connect and fly", desc: "Both accept. Details shared. You coordinate." },
             ].map((s) => (
-              <div key={s.n} style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontFamily: FONT, fontSize: 72, fontWeight: 700, color: DIVIDER, lineHeight: 1, marginBottom: 16 }}>
+              <div key={s.n} style={{ flex: "1 1 200px", textAlign: "center" }}>
+                <div style={{ fontFamily: FONT, fontSize: "clamp(48px, 8vw, 72px)", fontWeight: 700, color: DIVIDER, lineHeight: 1, marginBottom: 16 }}>
                   {s.n}
                 </div>
                 <h3 style={{ fontFamily: FONT, fontSize: 18, fontWeight: 700, color: HEADLINE, marginBottom: 8 }}>
@@ -818,8 +819,8 @@ const captionSmall: React.CSSProperties = {
 };
 
 const illustrationBox: React.CSSProperties = {
-  width: "clamp(200px, 32vw, 320px)",
-  height: "clamp(200px, 32vw, 320px)",
+  width: "clamp(160px, 40vw, 320px)",
+  height: "clamp(160px, 40vw, 320px)",
   flexShrink: 0,
   borderRadius: 20,
   overflow: "hidden",
@@ -844,23 +845,25 @@ const momentRow: React.CSSProperties = {
 const solutionGrid: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: 0,
+  gap: "clamp(24px, 4vw, 0px)",
+  justifyContent: "center",
 };
 
 const stepsGrid: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: "clamp(24px, 4vw, 48px)",
+  justifyContent: "center",
 };
 
 const scenarioGrid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-  gap: 20,
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))",
+  gap: 16,
 };
 
 const trustGrid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-  gap: 32,
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))",
+  gap: 24,
 };

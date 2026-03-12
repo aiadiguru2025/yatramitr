@@ -114,7 +114,7 @@ export default function Auth() {
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="absolute right-0 top-full mt-1 w-52 bg-card border border-border rounded-lg shadow-float overflow-hidden z-50"
+                className="absolute right-0 top-full mt-1 w-48 sm:w-52 bg-card border border-border rounded-lg shadow-float overflow-hidden z-50"
               >
                 <div className="max-h-72 overflow-y-auto py-1">
                   {SUPPORTED_LANGUAGES.map((lang) => (
@@ -135,9 +135,9 @@ export default function Auth() {
       </div>
 
       {/* Hero */}
-      <div className="px-6 pt-8 pb-10">
+      <div className="px-4 sm:px-6 pt-6 sm:pt-8 pb-8 sm:pb-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="font-display text-4xl font-bold text-foreground leading-tight mb-2">
+          <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground leading-tight mb-2">
             {step === "input" ? t("auth.create_account") : (mode === "phone" ? t("auth.verify_otp") : t("auth.verify_otp"))}
           </h1>
           <p className="text-muted-foreground text-base">{t("app.tagline")}</p>
@@ -145,7 +145,7 @@ export default function Auth() {
       </div>
 
       {/* Form */}
-      <div className="flex-1 px-6 max-w-sm w-full mx-auto">
+      <div className="flex-1 px-4 sm:px-6 max-w-sm w-full mx-auto">
         <AnimatePresence mode="wait">
           {step === "input" ? (
             <motion.div key="input" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">

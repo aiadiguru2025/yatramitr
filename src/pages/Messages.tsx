@@ -307,7 +307,7 @@ export default function Messages() {
           </div>
           {/* Contact info — only shown for accepted connections */}
           {otherPrivacy && (
-            <div className="flex gap-3 mt-2 ml-12">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mt-2 ml-11 sm:ml-12">
               {otherPrivacy.show_email && otherUser?.email && (
                 <a href={`mailto:${otherUser.email}`} className="text-xs text-primary flex items-center gap-1">
                   <Mail className="h-3 w-3" /> {otherUser.email}

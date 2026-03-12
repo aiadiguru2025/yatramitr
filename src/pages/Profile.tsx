@@ -134,7 +134,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-4 sm:space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">Profile</h1>
           <Button variant="ghost" size="icon" onClick={async () => {

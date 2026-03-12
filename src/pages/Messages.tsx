@@ -60,6 +60,17 @@ interface Message {
   read_at: string | null;
 }
 
+const HELP_TAG_LABELS: Record<string, string> = {
+  airport_pickup: "Airport Pickup",
+  local_guide: "Local Guide",
+  translation: "Translation",
+  accommodation: "Accommodation",
+  food_recommendations: "Food Recommendations",
+  emergency_contact: "Emergency Contact",
+  document_help: "Document Help",
+  transport: "Transport",
+};
+
 type Tab = "messages" | "requests";
 
 export default function Messages() {
@@ -472,12 +483,12 @@ export default function Messages() {
                         <div className="flex flex-wrap gap-1">
                           {(reqHelp.needs_help_with || []).map(tag => (
                             <Badge key={tag} variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                              Needs: {tag}
+                              Needs: {HELP_TAG_LABELS[tag] || tag}
                             </Badge>
                           ))}
                           {(reqHelp.can_help_with || []).map(tag => (
                             <Badge key={tag} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                              Can help: {tag}
+                              Can help: {HELP_TAG_LABELS[tag] || tag}
                             </Badge>
                           ))}
                         </div>

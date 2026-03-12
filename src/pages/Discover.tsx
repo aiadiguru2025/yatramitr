@@ -49,9 +49,20 @@ interface ConnectionRecord {
 }
 
 const HELP_TAGS = [
-  "Airport Pickup", "Local Guide", "Accommodation", "Translation",
-  "Medical", "Business", "Education", "Shopping", "Temple Visit"
-];
+  "airport_pickup", "local_guide", "translation", "accommodation",
+  "food_recommendations", "emergency_contact", "document_help", "transport",
+] as const;
+
+const HELP_TAG_LABELS: Record<string, string> = {
+  airport_pickup: "Airport Pickup",
+  local_guide: "Local Guide",
+  translation: "Translation",
+  accommodation: "Accommodation",
+  food_recommendations: "Food Recommendations",
+  emergency_contact: "Emergency Contact",
+  document_help: "Document Help",
+  transport: "Transport",
+};
 
 export default function Discover() {
   const { user } = useAuth();
@@ -189,7 +200,7 @@ export default function Discover() {
                 prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
               )}
             >
-              {tag}
+              {HELP_TAG_LABELS[tag] || tag}
             </Badge>
           ))}
         </div>
@@ -237,12 +248,12 @@ export default function Discover() {
                           <div className="flex flex-wrap gap-1 mt-1">
                             {(userHelp.can_help_with || []).map(tag => (
                               <Badge key={tag} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                Can help: {tag}
+                                Can help: {HELP_TAG_LABELS[tag] || tag}
                               </Badge>
                             ))}
                             {(userHelp.needs_help_with || []).map(tag => (
                               <Badge key={tag} variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                Needs: {tag}
+                                Needs: {HELP_TAG_LABELS[tag] || tag}
                               </Badge>
                             ))}
                           </div>

@@ -4,9 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MapPin, UserPlus, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Search, MapPin, UserPlus, Loader2, Check, Clock, Globe, Plane } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
@@ -23,6 +32,7 @@ interface Trip {
   user_id: string;
   role: "traveller" | "helper";
   dest_city: string;
+  origin_city: string;
   travel_date: string;
 }
 
@@ -30,6 +40,12 @@ interface HelpProfile {
   user_id: string;
   can_help_with: string[] | null;
   needs_help_with: string[] | null;
+}
+
+interface ConnectionRecord {
+  requester: string;
+  addressee: string;
+  status: string;
 }
 
 const HELP_TAGS = [
@@ -45,9 +61,14 @@ export default function Discover() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [helpProfiles, setHelpProfiles] = useState<HelpProfile[]>([]);
-  const [connections, setConnections] = useState<string[]>([]);
+  const [connections, setConnections] = useState<Record<string, { status: string; direction: "sent" | "received" }>>({});
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
+
+  // Dialog state for optional note
+  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const [connectTarget, setConnectTarget] = useState<Profile | null>(null);
+  const [connectNote, setConnectNote] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -55,55 +76,78 @@ export default function Discover() {
 
   const fetchData = async () => {
     if (!user) return;
-    
+
     const [profilesRes, tripsRes, helpRes, connectionsRes] = await Promise.all([
       supabase.from("profiles").select("user_id, display_name, avatar_url, home_city, bio, languages").neq("user_id", user.id),
-      supabase.from("trips").select("user_id, role, dest_city, travel_date").eq("is_active", true),
+      supabase.from("trips").select("user_id, role, dest_city, origin_city, travel_date").eq("is_active", true),
       supabase.from("help_profile").select("user_id, can_help_with, needs_help_with").eq("is_active", true),
-      supabase.from("connections").select("addressee, requester").or(`requester.eq.${user.id},addressee.eq.${user.id}`)
+      supabase.from("connections").select("addressee, requester, status").or(`requester.eq.${user.id},addressee.eq.${user.id}`)
     ]);
 
     setProfiles(profilesRes.data || []);
     setTrips(tripsRes.data || []);
     setHelpProfiles(helpRes.data || []);
-    
-    const connectedIds = (connectionsRes.data || []).map(c =>
-      c.requester === user.id ? c.addressee : c.requester
-    );
-    setConnections(connectedIds);
+
+    // Build a map: other_user_id → { status, direction }
+    const connMap: Record<string, { status: string; direction: "sent" | "received" }> = {};
+    for (const c of (connectionsRes.data as ConnectionRecord[] || [])) {
+      const otherId = c.requester === user.id ? c.addressee : c.requester;
+      const direction = c.requester === user.id ? "sent" : "received";
+      connMap[otherId] = { status: c.status, direction };
+    }
+    setConnections(connMap);
     setLoading(false);
   };
 
-  const handleConnect = async (addresseeId: string) => {
-    if (!user) return;
-    setConnecting(addresseeId);
-    
+  const openConnectDialog = (profile: Profile) => {
+    setConnectTarget(profile);
+    setConnectNote("");
+    setConnectDialogOpen(true);
+  };
+
+  const handleConnect = async () => {
+    if (!user || !connectTarget) return;
+    setConnecting(connectTarget.user_id);
+    setConnectDialogOpen(false);
+
     const { error } = await supabase.from("connections").insert({
       requester: user.id,
-      addressee: addresseeId
+      addressee: connectTarget.user_id,
+      message: connectNote.trim() || null,
     });
 
     if (error) {
       toast({ title: "Error", description: "Could not send request", variant: "destructive" });
     } else {
-      toast({ title: "Request sent!" });
-      setConnections(prev => [...prev, addresseeId]);
+      toast({ title: "Request sent!", description: "They'll see your profile and note." });
+      setConnections(prev => ({ ...prev, [connectTarget.user_id]: { status: "pending", direction: "sent" } }));
     }
     setConnecting(null);
+    setConnectTarget(null);
+  };
+
+  const getConnectionStatus = (userId: string) => {
+    const conn = connections[userId];
+    if (!conn) return "none";
+    return conn.status; // pending, accepted, blocked
   };
 
   const filtered = profiles.filter(p => {
-    const matchesSearch = !search || 
+    // Don't show blocked connections
+    const conn = connections[p.user_id];
+    if (conn?.status === "blocked") return false;
+
+    const matchesSearch = !search ||
       p.display_name?.toLowerCase().includes(search.toLowerCase()) ||
       p.home_city?.toLowerCase().includes(search.toLowerCase());
-    
+
     const userTrips = trips.filter(t => t.user_id === p.user_id);
     const matchesRole = roleFilter === "all" || userTrips.some(t => t.role === roleFilter);
-    
+
     const userHelp = helpProfiles.find(h => h.user_id === p.user_id);
     const userTags = [...(userHelp?.can_help_with || []), ...(userHelp?.needs_help_with || [])];
     const matchesTags = tagFilter.length === 0 || tagFilter.some(t => userTags.includes(t));
-    
+
     return matchesSearch && matchesRole && matchesTags;
   });
 
@@ -111,7 +155,7 @@ export default function Discover() {
     <div className="min-h-screen bg-background pb-20">
       <div className="p-4 space-y-4">
         <h1 className="text-2xl font-bold text-foreground">Discover</h1>
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -141,7 +185,7 @@ export default function Discover() {
               key={tag}
               variant={tagFilter.includes(tag) ? "default" : "outline"}
               className="cursor-pointer"
-              onClick={() => setTagFilter(prev => 
+              onClick={() => setTagFilter(prev =>
                 prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
               )}
             >
@@ -157,9 +201,10 @@ export default function Discover() {
         ) : (
           <div className="space-y-3">
             {filtered.map(profile => {
-              const isConnected = connections.includes(profile.user_id);
+              const status = getConnectionStatus(profile.user_id);
               const userTrip = trips.find(t => t.user_id === profile.user_id);
-              
+              const userHelp = helpProfiles.find(h => h.user_id === profile.user_id);
+
               return (
                 <Card key={profile.user_id}>
                   <CardContent className="p-4">
@@ -176,23 +221,54 @@ export default function Discover() {
                           </p>
                         )}
                         {userTrip && (
-                          <Badge variant="secondary" className="mt-1">
-                            {userTrip.role === "traveller" ? "Travelling" : "Helping"} to {userTrip.dest_city}
-                          </Badge>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              <Plane className="h-3 w-3 mr-1" />
+                              {userTrip.role === "traveller" ? "Travelling" : "Helping"} to {userTrip.dest_city}
+                            </Badge>
+                          </div>
+                        )}
+                        {profile.languages && profile.languages.length > 0 && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <Globe className="h-3 w-3" /> {profile.languages.join(", ")}
+                          </p>
+                        )}
+                        {userHelp && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(userHelp.can_help_with || []).map(tag => (
+                              <Badge key={tag} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                Can help: {tag}
+                              </Badge>
+                            ))}
+                            {(userHelp.needs_help_with || []).map(tag => (
+                              <Badge key={tag} variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                Needs: {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      <Button
-                        size="sm"
-                        variant={isConnected ? "secondary" : "default"}
-                        disabled={isConnected || connecting === profile.user_id}
-                        onClick={() => handleConnect(profile.user_id)}
-                      >
-                        {connecting === profile.user_id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : isConnected ? "Requested" : (
-                          <><UserPlus className="h-4 w-4" /></>
-                        )}
-                      </Button>
+                      {status === "none" ? (
+                        <Button
+                          size="sm"
+                          disabled={connecting === profile.user_id}
+                          onClick={() => openConnectDialog(profile)}
+                        >
+                          {connecting === profile.user_id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <><UserPlus className="h-4 w-4 mr-1" /> Connect</>
+                          )}
+                        </Button>
+                      ) : status === "pending" ? (
+                        <Button size="sm" variant="secondary" disabled>
+                          <Clock className="h-4 w-4 mr-1" /> Pending
+                        </Button>
+                      ) : status === "accepted" ? (
+                        <Button size="sm" variant="secondary" disabled>
+                          <Check className="h-4 w-4 mr-1" /> Connected
+                        </Button>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>
@@ -204,6 +280,33 @@ export default function Discover() {
           </div>
         )}
       </div>
+
+      {/* Connect request dialog with optional note */}
+      <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send connection request</DialogTitle>
+            <DialogDescription>
+              {connectTarget?.display_name || "This user"} will see your public profile — your name, route, travel dates, languages, and help tags. Add an optional note to introduce yourself.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder={'e.g. "Hi, I\'m also on Emirates EK225 with my mom!"'}
+            value={connectNote}
+            onChange={e => setConnectNote(e.target.value)}
+            rows={3}
+            maxLength={200}
+          />
+          <p className="text-xs text-muted-foreground text-right">{connectNote.length}/200</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConnectDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleConnect}>
+              <UserPlus className="h-4 w-4 mr-1" /> Send Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );

@@ -8,9 +8,20 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Loader2, LogOut, Save } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Camera, ChevronsUpDown, Loader2, LogOut, Save, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+
+const LANGUAGES = [
+  "English", "Hindi", "Spanish", "French", "German", "Mandarin", "Japanese",
+  "Korean", "Portuguese", "Russian", "Arabic", "Italian", "Dutch", "Swedish",
+  "Turkish", "Thai", "Vietnamese", "Indonesian", "Malay", "Tamil", "Telugu",
+  "Bengali", "Urdu", "Punjabi", "Marathi", "Gujarati", "Kannada", "Malayalam",
+  "Polish", "Czech", "Greek", "Hebrew", "Persian", "Swahili", "Filipino"
+];
 
 export default function Profile() {
   const { user, signOut } = useAuth();
@@ -87,23 +98,28 @@ export default function Profile() {
   const saveProfile = async () => {
     if (!user) return;
     setSaving(true);
-    
-    const [profileRes, privacyRes] = await Promise.all([
-      supabase.from("profiles").update({
-        display_name: profile.display_name,
-        bio: profile.bio,
-        home_city: profile.home_city,
-        languages: profile.languages
-      }).eq("user_id", user.id),
-      supabase.from("privacy_settings").update(privacy).eq("user_id", user.id)
-    ]);
 
-    if (profileRes.error || privacyRes.error) {
+    try {
+      const [profileRes, privacyRes] = await Promise.all([
+        supabase.from("profiles").update({
+          display_name: profile.display_name,
+          bio: profile.bio,
+          home_city: profile.home_city,
+          languages: profile.languages
+        }).eq("user_id", user.id),
+        supabase.from("privacy_settings").update(privacy).eq("user_id", user.id)
+      ]);
+
+      if (profileRes.error || privacyRes.error) {
+        toast({ title: "Save failed", variant: "destructive" });
+      } else {
+        toast({ title: "Profile saved!" });
+      }
+    } catch {
       toast({ title: "Save failed", variant: "destructive" });
-    } else {
-      toast({ title: "Profile saved!" });
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   if (loading) {
@@ -119,7 +135,13 @@ export default function Profile() {
       <div className="p-4 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">Profile</h1>
-          <Button variant="ghost" size="icon" onClick={signOut}>
+          <Button variant="ghost" size="icon" onClick={async () => {
+            try {
+              await signOut();
+            } catch {
+              toast({ title: "Logout failed", variant: "destructive" });
+            }
+          }}>
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
@@ -155,11 +177,47 @@ export default function Profile() {
               <Textarea value={profile.bio} onChange={e => setProfile(p => ({ ...p, bio: e.target.value }))} rows={3} />
             </div>
             <div>
-              <Label>Languages (comma-separated)</Label>
-              <Input 
-                value={profile.languages.join(", ")} 
-                onChange={e => setProfile(p => ({ ...p, languages: e.target.value.split(",").map(l => l.trim()).filter(Boolean) }))} 
-              />
+              <Label>Languages</Label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {profile.languages.map(lang => (
+                  <Badge key={lang} variant="secondary" className="gap-1 pr-1">
+                    {lang}
+                    <button
+                      type="button"
+                      className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                      onClick={() => setProfile(p => ({ ...p, languages: p.languages.filter(l => l !== lang) }))}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
+                    Add languages...
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search languages..." />
+                    <CommandList>
+                      <CommandEmpty>No language found.</CommandEmpty>
+                      <CommandGroup>
+                        {LANGUAGES.filter(lang => !profile.languages.includes(lang)).map(lang => (
+                          <CommandItem
+                            key={lang}
+                            onSelect={() => setProfile(p => ({ ...p, languages: [...p.languages, lang] }))}
+                          >
+                            {lang}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </CardContent>
         </Card>

@@ -113,7 +113,11 @@ function DepartureBoard() {
   useEffect(() => {
     if (!initialized) return;
     const interval = setInterval(() => {
-      setSubjectIdx(prev => (prev + 1) % ROTATING_SUBJECTS.length);
+      setSubjectIdx(prev => {
+        let next: number;
+        do { next = Math.floor(Math.random() * ROTATING_SUBJECTS.length); } while (next === prev);
+        return next;
+      });
     }, CYCLE_INTERVAL);
     return () => clearInterval(interval);
   }, [initialized]);
@@ -307,11 +311,17 @@ export default function Landing() {
           maxWidth: "100%",
         }}
       >
-        <span style={{ fontFamily: FONT, fontSize: 17, fontWeight: 700, color: HEADLINE }}>
+        <a
+          href="#"
+          onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          style={{ fontFamily: FONT, fontSize: 17, fontWeight: 700, color: HEADLINE, textDecoration: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+        >
+          <img src="/favicon.png" alt="" style={{ width: 28, height: 28, borderRadius: "50%" }} />
           Yata Mitr
-        </span>
+        </a>
         <div style={{ display: "flex", alignItems: "center", gap: "clamp(16px, 3vw, 32px)" }}>
           {[
+            { label: "Problem", href: "#problem" },
             { label: "How It Works", href: "#how-it-works" },
             { label: "Scenarios", href: "#scenarios" },
             { label: "Trust", href: "#trust" },
@@ -413,6 +423,7 @@ export default function Landing() {
 
       {/* ── PROBLEM ── */}
       <FadeSection
+        id="problem"
         style={{ backgroundColor: GRAY_BG, padding: "clamp(80px, 10vw, 120px) 24px" }}
       >
         <div style={{ maxWidth: MAX_W, margin: "0 auto" }}>

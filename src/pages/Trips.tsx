@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Plane, MapPin, Calendar, Loader2, Trash2 } from "lucide-react";
+import { Plus, Plane, Calendar, Loader2, Trash2, Pencil } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { format } from "date-fns";
@@ -45,6 +45,7 @@ export default function Trips() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingTripId, setEditingTripId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyTrip);
   const [saving, setSaving] = useState(false);
 
@@ -68,27 +69,44 @@ export default function Trips() {
       toast({ title: "Please fill required fields", variant: "destructive" });
       return;
     }
-    
+
     setSaving(true);
-    const { error } = await supabase.from("trips").insert({
-      user_id: user.id,
+    const tripData = {
       origin_city: form.origin_city,
       dest_city: form.dest_city,
       travel_date: form.travel_date,
       return_date: form.return_date || null,
       role: form.role,
       notes: form.notes || null
-    });
+    };
+
+    const { error } = editingTripId
+      ? await supabase.from("trips").update(tripData).eq("id", editingTripId)
+      : await supabase.from("trips").insert({ ...tripData, user_id: user.id });
 
     if (error) {
-      toast({ title: "Failed to add trip", variant: "destructive" });
+      toast({ title: editingTripId ? "Failed to update trip" : "Failed to add trip", variant: "destructive" });
     } else {
-      toast({ title: "Trip added!" });
+      toast({ title: editingTripId ? "Trip updated!" : "Trip added!" });
       setForm(emptyTrip);
+      setEditingTripId(null);
       setShowForm(false);
       fetchTrips();
     }
     setSaving(false);
+  };
+
+  const startEditing = (trip: Trip) => {
+    setForm({
+      origin_city: trip.origin_city,
+      dest_city: trip.dest_city,
+      travel_date: trip.travel_date,
+      return_date: trip.return_date || "",
+      role: trip.role,
+      notes: trip.notes || ""
+    });
+    setEditingTripId(trip.id);
+    setShowForm(true);
   };
 
   const toggleActive = async (trip: Trip) => {
@@ -115,7 +133,7 @@ export default function Trips() {
       <div className="p-4 space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">My Trips</h1>
-          <Button size="sm" onClick={() => setShowForm(!showForm)}>
+          <Button size="sm" onClick={() => { setForm(emptyTrip); setEditingTripId(null); setShowForm(!showForm); }}>
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </div>
@@ -189,9 +207,14 @@ export default function Trips() {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <Switch checked={trip.is_active} onCheckedChange={() => toggleActive(trip)} />
-                      <Button variant="ghost" size="icon" onClick={() => deleteTrip(trip.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => startEditing(trip)}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteTrip(trip.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

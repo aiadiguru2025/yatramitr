@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Send, Loader2, UserCheck, UserX, Mail, Phone, MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { usePresence } from "@/hooks/usePresence";
+import PresenceDot from "@/components/PresenceDot";
 import BottomNav from "@/components/BottomNav";
 
 interface Connection {
@@ -75,6 +77,7 @@ type Tab = "messages" | "requests";
 
 export default function Messages() {
   const { user } = useAuth();
+  const { getStatus } = usePresence();
   const [tab, setTab] = useState<Tab>("messages");
 
   // Accepted connections (for messaging)
@@ -310,7 +313,10 @@ export default function Messages() {
               <AvatarFallback>{otherUser?.display_name?.[0] || "?"}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <span className="font-medium text-foreground">{otherUser?.display_name || "User"}</span>
+              <span className="font-medium text-foreground flex items-center gap-1.5">
+                {otherUser?.display_name || "User"}
+                <PresenceDot status={getStatus(otherUserId)} showLabel />
+              </span>
               {otherUser?.home_city && (
                 <p className="text-xs text-muted-foreground">{otherUser.home_city}</p>
               )}
@@ -416,15 +422,21 @@ export default function Messages() {
           ) : (
             <div className="space-y-2">
               {connections.map(conn => {
-                const otherUser = profiles[getOtherUserId(conn)];
+                const otherId = getOtherUserId(conn);
+                const otherUser = profiles[otherId];
                 const unread = unreadCounts[conn.id] || 0;
                 return (
                   <Card key={conn.id} className="cursor-pointer hover:bg-accent/50 transition" onClick={() => setSelectedConn(conn)}>
                     <CardContent className="p-4 flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={otherUser?.avatar_url || ""} />
-                        <AvatarFallback>{otherUser?.display_name?.[0] || "?"}</AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar>
+                          <AvatarImage src={otherUser?.avatar_url || ""} />
+                          <AvatarFallback>{otherUser?.display_name?.[0] || "?"}</AvatarFallback>
+                        </Avatar>
+                        <span className="absolute -bottom-0.5 -right-0.5">
+                          <PresenceDot status={getStatus(otherId)} />
+                        </span>
+                      </div>
                       <div className="flex-1">
                         <span className="font-medium text-foreground">{otherUser?.display_name || "User"}</span>
                         {otherUser?.home_city && (

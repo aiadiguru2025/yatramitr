@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { usePresence } from "@/hooks/usePresence";
 import PresenceDot from "@/components/PresenceDot";
 import BottomNav from "@/components/BottomNav";
+import { formatAirportShort } from "@/data/airports";
 
 interface Connection {
   id: string;
@@ -486,7 +487,7 @@ export default function Messages() {
                       {/* Trip info */}
                       {reqTrip && (
                         <Badge variant="secondary">
-                          {reqTrip.role === "traveller" ? "Travelling" : "Helping"}: {reqTrip.origin_city} → {reqTrip.dest_city} on {new Date(reqTrip.travel_date).toLocaleDateString()}
+                          {reqTrip.role === "traveller" ? "Travelling" : "Helping"}: {formatAirportShort(reqTrip.origin_city)} → {formatAirportShort(reqTrip.dest_city)} on {new Date(reqTrip.travel_date).toLocaleDateString()}
                         </Badge>
                       )}
 

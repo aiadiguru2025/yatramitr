@@ -13,6 +13,7 @@ import {
   Star, Users, Plane, MessageCircle, ArrowRight,
   TrendingUp, Globe, Calendar, Sparkles
 } from "lucide-react";
+import { formatAirportShort } from "@/data/airports";
 import BottomNav from "@/components/BottomNav";
 import { format } from "date-fns";
 
@@ -286,7 +287,7 @@ export default function Index() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground text-sm truncate">
-                          {trip.origin_city} → {trip.dest_city}
+                          {formatAirportShort(trip.origin_city)} → {formatAirportShort(trip.dest_city)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(trip.travel_date), "MMM d, yyyy")}

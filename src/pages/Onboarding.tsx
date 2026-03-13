@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { Check, Plane, HandHeart } from "lucide-react";
 import { INTEREST_TAGS, INTEREST_TAG_LABELS } from "@/lib/matching";
+import AirportSearch from "@/components/AirportSearch";
 
 const HELP_TAGS = [
   "airport_pickup","local_guide","translation","accommodation",
@@ -231,9 +232,9 @@ export default function Onboarding() {
                   ))}
                 </div>
                 <div><label className="text-sm font-medium text-foreground">{t("onboarding.origin_city")}</label>
-                  <Input value={form.origin_city} onChange={(e) => set("origin_city", e.target.value)} className="mt-1 h-11" /></div>
+                  <AirportSearch value={form.origin_city} onChange={(v) => set("origin_city", v)} placeholder="Search origin airport..." className="mt-1" /></div>
                 <div><label className="text-sm font-medium text-foreground">{t("onboarding.dest_city")}</label>
-                  <Input value={form.dest_city} onChange={(e) => set("dest_city", e.target.value)} className="mt-1 h-11" /></div>
+                  <AirportSearch value={form.dest_city} onChange={(v) => set("dest_city", v)} placeholder="Search destination airport..." className="mt-1" /></div>
                 <div><label className="text-sm font-medium text-foreground">{t("onboarding.travel_date")}</label>
                   <Input type="date" value={form.travel_date} onChange={(e) => set("travel_date", e.target.value)} className="mt-1 h-11" /></div>
                 <div><label className="text-sm font-medium text-foreground">Return Date (optional)</label>

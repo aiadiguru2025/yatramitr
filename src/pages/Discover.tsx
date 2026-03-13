@@ -18,6 +18,7 @@ import {
 import { Search, MapPin, UserPlus, Loader2, Check, Clock, Globe, Plane, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import { formatAirportShort } from "@/data/airports";
 import {
   rankMatches,
   type UserMatchProfile,
@@ -452,7 +453,7 @@ export default function Discover() {
                           <div className="flex items-center gap-1 mt-1">
                             <Badge variant="secondary" className="text-xs">
                               <Plane className="h-3 w-3 mr-1" />
-                              {userTrip.role === "traveller" ? "Travelling" : "Helping"} to {userTrip.dest_city}
+                              {userTrip.role === "traveller" ? "Travelling" : "Helping"} to {formatAirportShort(userTrip.dest_city)}
                             </Badge>
                           </div>
                         )}

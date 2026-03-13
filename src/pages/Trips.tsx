@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Plane, Calendar, Loader2, Trash2, Pencil } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import AirportSearch from "@/components/AirportSearch";
+import { formatAirportShort } from "@/data/airports";
 import { format } from "date-fns";
 
 interface Trip {
@@ -143,12 +145,12 @@ export default function Trips() {
             <CardContent className="p-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label>From City *</Label>
-                  <Input value={form.origin_city} onChange={e => setForm(f => ({ ...f, origin_city: e.target.value }))} />
+                  <Label>From *</Label>
+                  <AirportSearch value={form.origin_city} onChange={v => setForm(f => ({ ...f, origin_city: v }))} placeholder="Search origin airport..." />
                 </div>
                 <div>
-                  <Label>To City *</Label>
-                  <Input value={form.dest_city} onChange={e => setForm(f => ({ ...f, dest_city: e.target.value }))} />
+                  <Label>To *</Label>
+                  <AirportSearch value={form.dest_city} onChange={v => setForm(f => ({ ...f, dest_city: v }))} placeholder="Search destination airport..." />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -194,7 +196,7 @@ export default function Trips() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Plane className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">{trip.origin_city} → {trip.dest_city}</span>
+                        <span className="font-medium text-foreground">{formatAirportShort(trip.origin_city)} → {formatAirportShort(trip.dest_city)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3" />

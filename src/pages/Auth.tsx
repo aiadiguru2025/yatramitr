@@ -11,7 +11,7 @@ import { SUPPORTED_LANGUAGES, type LangCode } from "@/i18n";
 import i18n from "@/i18n";
 import { toast } from "sonner";
 
-type AuthMode = "phone" | "email";
+type AuthMode = "phone" | "email" | "password";
 type AuthStep = "input" | "otp";
 
 export default function Auth() {
@@ -24,6 +24,7 @@ export default function Auth() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [showLangPicker, setShowLangPicker] = useState(false);
@@ -54,6 +55,19 @@ export default function Auth() {
       }
       setStep("otp");
       setCountdown(60);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t("auth.error_generic"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate("/home", { replace: true });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("auth.error_generic"));
     } finally {
@@ -149,7 +163,7 @@ export default function Auth() {
         <AnimatePresence mode="wait">
           {step === "input" ? (
             <motion.div key="input" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              {/* Phone / Email input */}
+              {/* Phone / Email / Password input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
                   {mode === "phone" ? t("auth.phone") : t("auth.email")}
@@ -171,24 +185,41 @@ export default function Auth() {
                     className="h-12 text-base"
                   />
                 )}
+                {mode === "password" && (
+                  <Input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-12 text-base"
+                  />
+                )}
               </div>
 
               <Button
                 className="w-full h-12 gradient-hero text-primary-foreground font-semibold text-base shadow-warm"
-                onClick={handleSendOtp}
-                disabled={loading || (mode === "phone" ? phone.length < 10 : email.length < 5)}
+                onClick={mode === "password" ? handlePasswordLogin : handleSendOtp}
+                disabled={loading || (mode === "phone" ? phone.length < 10 : mode === "password" ? (email.length < 5 || password.length < 6) : email.length < 5)}
               >
-                {loading ? t("common.loading") : t("auth.send_otp")}
+                {loading ? t("common.loading") : mode === "password" ? "Sign In" : t("auth.send_otp")}
               </Button>
 
               {/* Toggle mode */}
-              <button
-                onClick={() => setMode(mode === "phone" ? "email" : "phone")}
-                className="flex items-center gap-1.5 text-sm text-secondary font-medium mx-auto"
-              >
-                {mode === "phone" ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
-                {mode === "phone" ? t("auth.use_email") : t("auth.use_phone")}
-              </button>
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => setMode(mode === "phone" ? "email" : "phone")}
+                  className="flex items-center gap-1.5 text-sm text-secondary font-medium"
+                >
+                  {mode === "phone" ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+                  {mode === "phone" ? t("auth.use_email") : t("auth.use_phone")}
+                </button>
+                <button
+                  onClick={() => setMode(mode === "password" ? "email" : "password")}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
+                >
+                  {mode === "password" ? "Use OTP instead" : "Use password"}
+                </button>
+              </div>
 
               <div className="flex items-center gap-3 my-2">
                 <div className="flex-1 h-px bg-border" />

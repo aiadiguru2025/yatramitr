@@ -209,8 +209,8 @@ export default function Onboarding() {
                 <div><label className="text-sm font-medium text-foreground mb-2 block">{t("onboarding.languages")}</label>
                   <div className="flex flex-wrap gap-2">
                     {SUPPORTED_LANGUAGES.map((lang) => (
-                      <button key={lang.code} onClick={() => toggleArr("languages", lang.code)}
-                        className={pillBtn(form.languages.includes(lang.code))}>
+                      <button key={lang.code} onClick={() => toggleArr("languages", lang.label)}
+                        className={pillBtn(form.languages.includes(lang.label))}>
                         {lang.nativeLabel}
                       </button>
                     ))}

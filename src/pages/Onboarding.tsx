@@ -10,13 +10,14 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { Check, Plane, HandHeart } from "lucide-react";
+import { INTEREST_TAGS, INTEREST_TAG_LABELS } from "@/lib/matching";
 
 const HELP_TAGS = [
   "airport_pickup","local_guide","translation","accommodation",
   "food_recommendations","emergency_contact","document_help","transport",
 ] as const;
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 interface FormData {
   full_name: string;
@@ -30,8 +31,19 @@ interface FormData {
   origin_city: string;
   dest_city: string;
   travel_date: string;
+  return_date: string;
+  // Travel preferences
+  travel_pace: "slow" | "moderate" | "fast" | "";
+  planning_style: "spontaneous" | "flexible" | "structured" | "";
+  accommodation_pref: "budget" | "mid_range" | "luxury" | "";
+  interests: string[];
+  dietary: "none" | "vegetarian" | "vegan" | "halal" | "kosher" | "";
+  smoking: boolean;
+  date_flexible: boolean;
+  // Help
   needs_help_with: string[];
   can_help_with: string[];
+  // Privacy
   show_phone: boolean;
   show_email: boolean;
   show_full_name: boolean;
@@ -47,14 +59,17 @@ export default function Onboarding() {
   const [form, setForm] = useState<FormData>({
     full_name: "", display_name: "", bio: "", gender: "", birth_year: "",
     languages: [], home_city: "", role: "traveller",
-    origin_city: "", dest_city: "", travel_date: "",
+    origin_city: "", dest_city: "", travel_date: "", return_date: "",
+    travel_pace: "", planning_style: "", accommodation_pref: "",
+    interests: [],
+    dietary: "", smoking: false, date_flexible: false,
     needs_help_with: [], can_help_with: [],
     show_phone: false, show_email: false, show_full_name: true, discoverable: true,
   });
 
   const set = (key: keyof FormData, val: unknown) => setForm((f) => ({ ...f, [key]: val }));
-  const toggleArr = (key: "languages" | "needs_help_with" | "can_help_with", val: string) =>
-    set(key, form[key].includes(val) ? form[key].filter((v) => v !== val) : [...form[key], val]);
+  const toggleArr = (key: "languages" | "needs_help_with" | "can_help_with" | "interests", val: string) =>
+    set(key, (form[key] as string[]).includes(val) ? (form[key] as string[]).filter((v) => v !== val) : [...(form[key] as string[]), val]);
 
   const handleFinish = async () => {
     if (!user) return;
@@ -79,7 +94,33 @@ export default function Onboarding() {
           dest_city: form.dest_city,
           travel_date: form.travel_date,
         });
+        // Update return_date separately if provided (column may not be in generated types yet)
+        if (form.return_date) {
+          const { data: tripRows } = await supabase.from("trips")
+            .select("id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1);
+          if (tripRows?.[0]) {
+            await (supabase as unknown as { from(t: string): { update(v: Record<string, unknown>): { eq(k: string, v: string): unknown } } })
+              .from("trips").update({ return_date: form.return_date }).eq("id", tripRows[0].id);
+          }
+        }
       }
+
+      // Save travel preferences (table may not be in generated types yet)
+      const tpClient = supabase as unknown as {
+        from(t: string): {
+          upsert(v: Record<string, unknown>, opts: { onConflict: string }): unknown;
+        };
+      };
+      await tpClient.from("travel_preferences").upsert({
+        user_id: user.id,
+        travel_pace: form.travel_pace || null,
+        planning_style: form.planning_style || null,
+        accommodation_pref: form.accommodation_pref || null,
+        interests: form.interests,
+        smoking: form.smoking,
+        dietary: form.dietary || "none",
+        date_flexible: form.date_flexible,
+      }, { onConflict: "user_id" });
 
       await supabase.from("help_profile").upsert({
         user_id: user.id,
@@ -106,9 +147,19 @@ export default function Onboarding() {
   const steps = [
     { title: t("onboarding.step1_title"), subtitle: t("onboarding.step1_subtitle") },
     { title: t("onboarding.step2_title"), subtitle: t("onboarding.step2_subtitle") },
+    { title: "Travel Style", subtitle: "Help us find your ideal travel companion" },
     { title: t("onboarding.step3_title"), subtitle: t("onboarding.step3_subtitle") },
     { title: t("onboarding.step4_title"), subtitle: t("onboarding.step4_subtitle") },
   ];
+
+  const pillBtn = (selected: boolean, accent: "primary" | "accent" | "secondary" = "primary") => {
+    const colors = {
+      primary: selected ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground hover:border-primary",
+      accent: selected ? "bg-accent text-accent-foreground border-accent" : "border-border text-foreground hover:border-accent",
+      secondary: selected ? "bg-secondary text-secondary-foreground border-secondary" : "border-border text-foreground hover:border-secondary",
+    };
+    return `px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${colors[accent]}`;
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
@@ -146,7 +197,7 @@ export default function Onboarding() {
                   <div className="flex flex-wrap gap-2">
                     {(["male", "female", "non_binary", "prefer_not_to_say"] as const).map((g) => (
                       <button key={g} onClick={() => set("gender", form.gender === g ? "" : g)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${form.gender === g ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground hover:border-primary"}`}>
+                        className={pillBtn(form.gender === g)}>
                         {t(`common.${g}`)}
                       </button>
                     ))}
@@ -158,7 +209,7 @@ export default function Onboarding() {
                   <div className="flex flex-wrap gap-2">
                     {SUPPORTED_LANGUAGES.map((lang) => (
                       <button key={lang.code} onClick={() => toggleArr("languages", lang.code)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${form.languages.includes(lang.code) ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground hover:border-primary"}`}>
+                        className={pillBtn(form.languages.includes(lang.code))}>
                         {lang.nativeLabel}
                       </button>
                     ))}
@@ -185,18 +236,95 @@ export default function Onboarding() {
                   <Input value={form.dest_city} onChange={(e) => set("dest_city", e.target.value)} className="mt-1 h-11" /></div>
                 <div><label className="text-sm font-medium text-foreground">{t("onboarding.travel_date")}</label>
                   <Input type="date" value={form.travel_date} onChange={(e) => set("travel_date", e.target.value)} className="mt-1 h-11" /></div>
+                <div><label className="text-sm font-medium text-foreground">Return Date (optional)</label>
+                  <Input type="date" value={form.return_date} onChange={(e) => set("return_date", e.target.value)} className="mt-1 h-11" /></div>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
+                  <span className="text-sm text-foreground">Flexible dates?</span>
+                  <Switch checked={form.date_flexible} onCheckedChange={(v) => set("date_flexible", v)} />
+                </div>
               </div>
             )}
 
-            {/* Step 3: Help */}
+            {/* Step 3: Travel Style & Preferences */}
             {step === 3 && (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Travel Pace</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["slow", "moderate", "fast"] as const).map((v) => (
+                      <button key={v} onClick={() => set("travel_pace", form.travel_pace === v ? "" : v)}
+                        className={pillBtn(form.travel_pace === v)}>
+                        {v === "slow" ? "Slow & Relaxed" : v === "moderate" ? "Moderate" : "Fast-Paced"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Planning Style</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["spontaneous", "flexible", "structured"] as const).map((v) => (
+                      <button key={v} onClick={() => set("planning_style", form.planning_style === v ? "" : v)}
+                        className={pillBtn(form.planning_style === v)}>
+                        {v === "spontaneous" ? "Spontaneous" : v === "flexible" ? "Flexible" : "Well-Planned"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Accommodation</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["budget", "mid_range", "luxury"] as const).map((v) => (
+                      <button key={v} onClick={() => set("accommodation_pref", form.accommodation_pref === v ? "" : v)}
+                        className={pillBtn(form.accommodation_pref === v)}>
+                        {v === "budget" ? "Budget" : v === "mid_range" ? "Mid-Range" : "Luxury"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Interests</p>
+                  <div className="flex flex-wrap gap-2">
+                    {INTEREST_TAGS.map((tag) => (
+                      <button key={tag} onClick={() => toggleArr("interests", tag)}
+                        className={`flex items-center gap-1.5 ${pillBtn(form.interests.includes(tag))}`}>
+                        {form.interests.includes(tag) && <Check className="w-3 h-3" />}
+                        {INTEREST_TAG_LABELS[tag] || tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Dietary Preference</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["none", "vegetarian", "vegan", "halal", "kosher"] as const).map((v) => (
+                      <button key={v} onClick={() => set("dietary", form.dietary === v ? "" : v)}
+                        className={pillBtn(form.dietary === v)}>
+                        {v === "none" ? "No Restrictions" : v.charAt(0).toUpperCase() + v.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
+                  <span className="text-sm text-foreground">Smoker?</span>
+                  <Switch checked={form.smoking} onCheckedChange={(v) => set("smoking", v)} />
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Help */}
+            {step === 4 && (
               <div className="space-y-5">
                 <div>
                   <p className="text-sm font-medium text-foreground mb-2">{t("onboarding.help_needs")}</p>
                   <div className="flex flex-wrap gap-2">
                     {HELP_TAGS.map((tag) => (
                       <button key={tag} onClick={() => toggleArr("needs_help_with", tag)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${form.needs_help_with.includes(tag) ? "bg-accent text-accent-foreground border-accent" : "border-border text-foreground hover:border-accent"}`}>
+                        className={`flex items-center gap-1.5 ${pillBtn(form.needs_help_with.includes(tag), "accent")}`}>
                         {form.needs_help_with.includes(tag) && <Check className="w-3 h-3" />}
                         {t(`help_tags.${tag}`)}
                       </button>
@@ -208,7 +336,7 @@ export default function Onboarding() {
                   <div className="flex flex-wrap gap-2">
                     {HELP_TAGS.map((tag) => (
                       <button key={tag} onClick={() => toggleArr("can_help_with", tag)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${form.can_help_with.includes(tag) ? "bg-secondary text-secondary-foreground border-secondary" : "border-border text-foreground hover:border-secondary"}`}>
+                        className={`flex items-center gap-1.5 ${pillBtn(form.can_help_with.includes(tag), "secondary")}`}>
                         {form.can_help_with.includes(tag) && <Check className="w-3 h-3" />}
                         {t(`help_tags.${tag}`)}
                       </button>
@@ -218,8 +346,8 @@ export default function Onboarding() {
               </div>
             )}
 
-            {/* Step 4: Privacy */}
-            {step === 4 && (
+            {/* Step 5: Privacy */}
+            {step === 5 && (
               <div className="space-y-4">
                 {([
                   { key: "show_full_name", label: t("onboarding.show_full_name") },

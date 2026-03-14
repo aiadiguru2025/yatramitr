@@ -107,6 +107,40 @@ export default function Messages() {
     }
   }, [user]);
 
+  // Realtime: listen for new/updated connections (requests + acceptances)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("connections-realtime")
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "connections",
+        filter: `addressee=eq.${user.id}`
+      }, () => {
+        fetchPendingRequests();
+        fetchConnections();
+      })
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "connections",
+        filter: `requester=eq.${user.id}`
+      }, () => {
+        fetchConnections();
+      })
+      // Listen for any new messages across all connections for unread counts
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "messages",
+      }, (payload) => {
+        const msg = payload.new as Message;
+        if (msg.sender_id !== user.id) {
+          setUnreadCounts(prev => ({
+            ...prev,
+            [msg.connection_id]: (prev[msg.connection_id] || 0) + 1,
+          }));
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   useEffect(() => {
     if (selectedConn) {
       fetchMessages(selectedConn.id);

@@ -177,6 +177,39 @@ export default function Discover() {
     fetchData();
   }, [user]);
 
+  // Realtime: listen for connection status changes so buttons update live
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("discover-connections-realtime")
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "connections",
+        filter: `requester=eq.${user.id}`
+      }, (payload) => {
+        const c = payload.new as ConnectionRecord & { id?: string };
+        if (c.addressee) {
+          setConnections(prev => ({
+            ...prev,
+            [c.addressee]: { status: c.status, direction: "sent" },
+          }));
+        }
+      })
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "connections",
+        filter: `addressee=eq.${user.id}`
+      }, (payload) => {
+        const c = payload.new as ConnectionRecord & { id?: string };
+        if (c.requester) {
+          setConnections(prev => ({
+            ...prev,
+            [c.requester]: { status: c.status, direction: "received" },
+          }));
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   const fetchData = async () => {
     if (!user) return;
 

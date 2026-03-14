@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, MapPin, UserPlus, Loader2, Check, Clock, Globe, Plane, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, MapPin, UserPlus, Loader2, Check, Clock, Globe, Plane, Sparkles, ChevronDown, ChevronUp, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { formatAirportShort } from "@/data/airports";
@@ -362,6 +362,29 @@ export default function Discover() {
     setConnectTarget(null);
   };
 
+  const handleWithdraw = async (targetUserId: string) => {
+    if (!user) return;
+    setConnecting(targetUserId);
+    const { error } = await supabase
+      .from("connections")
+      .delete()
+      .eq("requester", user.id)
+      .eq("addressee", targetUserId)
+      .eq("status", "pending");
+
+    if (error) {
+      toast({ title: "Error", description: "Could not withdraw request", variant: "destructive" });
+    } else {
+      toast({ title: "Request withdrawn" });
+      setConnections(prev => {
+        const next = { ...prev };
+        delete next[targetUserId];
+        return next;
+      });
+    }
+    setConnecting(null);
+  };
+
   const getConnectionStatus = (userId: string) => {
     const conn = connections[userId];
     if (!conn) return "none";
@@ -521,6 +544,20 @@ export default function Discover() {
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <><UserPlus className="h-4 w-4 mr-1" /> Connect</>
+                          )}
+                        </Button>
+                      ) : status === "pending" && connections[profile.user_id]?.direction === "sent" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                          disabled={connecting === profile.user_id}
+                          onClick={() => handleWithdraw(profile.user_id)}
+                        >
+                          {connecting === profile.user_id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <><X className="h-4 w-4 mr-1" /> Withdraw</>
                           )}
                         </Button>
                       ) : status === "pending" ? (

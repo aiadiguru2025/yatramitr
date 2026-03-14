@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import AirportSearch from "@/components/AirportSearch";
 import { formatAirportShort } from "@/data/airports";
+import { awardKarma } from "@/lib/karma";
 import { format } from "date-fns";
 
 interface Trip {
@@ -90,6 +91,14 @@ export default function Trips() {
       toast({ title: editingTripId ? "Failed to update trip" : "Failed to add trip", variant: "destructive" });
     } else {
       toast({ title: editingTripId ? "Trip updated!" : "Trip added!" });
+      // Award karma for new trips (not edits)
+      if (!editingTripId && user) {
+        const isFirst = trips.length === 0;
+        await awardKarma(user.id, isFirst ? "first_trip_created" : "trip_created");
+        if (form.role === "helper") {
+          await awardKarma(user.id, "helper_trip_created");
+        }
+      }
       setForm(emptyTrip);
       setEditingTripId(null);
       setShowForm(false);

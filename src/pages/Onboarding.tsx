@@ -12,6 +12,7 @@ import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { Check, Plane, HandHeart } from "lucide-react";
 import { INTEREST_TAGS, INTEREST_TAG_LABELS } from "@/lib/matching";
 import AirportSearch from "@/components/AirportSearch";
+import { awardKarma } from "@/lib/karma";
 
 const HELP_TAGS = [
   "airport_pickup","local_guide","translation","accommodation",
@@ -135,6 +136,15 @@ export default function Onboarding() {
         show_full_name: form.show_full_name,
         discoverable: form.discoverable,
       }).eq("user_id", user.id);
+
+      // Award karma for profile completion and trip creation
+      await awardKarma(user.id, "profile_completed");
+      if (form.origin_city && form.dest_city && form.travel_date) {
+        await awardKarma(user.id, "first_trip_created");
+        if (form.role === "helper") {
+          await awardKarma(user.id, "helper_trip_created");
+        }
+      }
 
       navigate("/home", { replace: true });
     } catch (err: unknown) {

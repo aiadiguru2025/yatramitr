@@ -15,6 +15,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Camera, ChevronsUpDown, Loader2, LogOut, Save, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import KarmaBadge from "@/components/KarmaBadge";
+import EndorsementSummary from "@/components/EndorsementSummary";
+import KarmaHistory from "@/components/KarmaHistory";
+import { awardKarma } from "@/lib/karma";
 
 const LANGUAGES = [
   "English", "Hindi", "Spanish", "French", "German", "Mandarin", "Japanese",
@@ -36,7 +40,8 @@ export default function Profile() {
     bio: "",
     home_city: "",
     languages: [] as string[],
-    avatar_url: ""
+    avatar_url: "",
+    karma_score: 0,
   });
   
   const [privacy, setPrivacy] = useState({
@@ -54,7 +59,7 @@ export default function Profile() {
     if (!user) return;
     
     const [profileRes, privacyRes] = await Promise.all([
-      supabase.from("profiles").select("display_name, bio, home_city, languages, avatar_url").eq("user_id", user.id).single(),
+      supabase.from("profiles").select("display_name, bio, home_city, languages, avatar_url, karma_score").eq("user_id", user.id).single(),
       supabase.from("privacy_settings").select("discoverable, show_email, show_phone, show_full_name").eq("user_id", user.id).single()
     ]);
 
@@ -64,7 +69,8 @@ export default function Profile() {
         bio: profileRes.data.bio || "",
         home_city: profileRes.data.home_city || "",
         languages: profileRes.data.languages || [],
-        avatar_url: profileRes.data.avatar_url || ""
+        avatar_url: profileRes.data.avatar_url || "",
+        karma_score: profileRes.data.karma_score ?? 0,
       });
     }
     
@@ -92,6 +98,7 @@ export default function Profile() {
       const url = `${data.publicUrl}?t=${Date.now()}`;
       await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
       setProfile(prev => ({ ...prev, avatar_url: url }));
+      awardKarma(user.id, "avatar_uploaded");
       toast({ title: "Avatar updated!" });
     }
     setUploading(false);
@@ -161,6 +168,20 @@ export default function Profile() {
             </label>
           </div>
         </div>
+
+        {/* Karma & Endorsements */}
+        <div className="flex justify-center">
+          <KarmaBadge score={profile.karma_score} size="md" />
+        </div>
+
+        {user && (
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <EndorsementSummary userId={user.id} />
+              <KarmaHistory userId={user.id} />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatAirportShort } from "@/data/airports";
 import BottomNav from "@/components/BottomNav";
+import { getKarmaTier } from "@/lib/karma";
 import { format } from "date-fns";
 
 interface UpcomingTrip {
@@ -117,7 +118,7 @@ export default function Index() {
   const statCards = [
     { icon: Plane, label: "Trips", value: tripCount, color: "text-primary", bg: "bg-primary/10", onClick: () => navigate("/trips") },
     { icon: Users, label: "Connections", value: connectionCount, color: "text-blue-500", bg: "bg-blue-500/10", onClick: () => navigate("/messages") },
-    { icon: Star, label: "Karma", value: profile?.karma_score ?? 0, color: "text-karma", bg: "bg-karma/10", onClick: undefined },
+    { icon: Star, label: "Karma", value: profile?.karma_score ?? 0, color: "text-karma", bg: "bg-karma/10", onClick: () => navigate("/profile") },
   ];
 
   const greeting = () => {
@@ -148,9 +149,12 @@ export default function Index() {
           </div>
           <div className="flex items-center gap-2">
             {profile && (
-              <div className="flex items-center gap-1 bg-karma/10 text-karma px-2.5 py-1 rounded-full text-xs font-semibold">
+              <div
+                className="flex items-center gap-1 bg-karma/10 text-karma px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer"
+                onClick={() => navigate("/profile")}
+              >
                 <Star className="w-3.5 h-3.5" />
-                {profile.karma_score}
+                {profile.karma_score} · {getKarmaTier(profile.karma_score ?? 0).name}
               </div>
             )}
           </div>

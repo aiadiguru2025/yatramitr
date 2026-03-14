@@ -19,6 +19,8 @@ import { Search, MapPin, UserPlus, Loader2, Check, Clock, Globe, Plane, Sparkles
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { formatAirportShort } from "@/data/airports";
+import { awardKarma } from "@/lib/karma";
+import KarmaBadge from "@/components/KarmaBadge";
 import {
   rankMatches,
   type UserMatchProfile,
@@ -35,6 +37,7 @@ interface Profile {
   languages: string[] | null;
   birth_year: number | null;
   gender: string | null;
+  karma_score: number | null;
 }
 
 interface Trip {
@@ -224,11 +227,11 @@ export default function Discover() {
     };
 
     const [profilesRes, tripsRes, helpRes, connectionsRes, myProfileRes, myTripsRes, myHelpRes, myPrefsRes, allPrefsRes] = await Promise.all([
-      supabase.from("profiles").select("user_id, display_name, avatar_url, home_city, bio, languages, birth_year, gender").neq("user_id", user.id),
+      supabase.from("profiles").select("user_id, display_name, avatar_url, home_city, bio, languages, birth_year, gender, karma_score").neq("user_id", user.id),
       supabase.from("trips").select("user_id, role, dest_city, dest_country, origin_city, travel_date, return_date").eq("is_active", true),
       supabase.from("help_profile").select("user_id, can_help_with, needs_help_with").eq("is_active", true),
       supabase.from("connections").select("addressee, requester, status").or(`requester.eq.${user.id},addressee.eq.${user.id}`),
-      supabase.from("profiles").select("user_id, display_name, avatar_url, home_city, bio, languages, birth_year, gender").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("user_id, display_name, avatar_url, home_city, bio, languages, birth_year, gender, karma_score").eq("user_id", user.id).maybeSingle(),
       supabase.from("trips").select("user_id, role, dest_city, dest_country, origin_city, travel_date, return_date").eq("user_id", user.id).eq("is_active", true),
       supabase.from("help_profile").select("user_id, can_help_with, needs_help_with").eq("user_id", user.id).maybeSingle(),
       tpClient.from("travel_preferences").select("*").eq("user_id", user.id).maybeSingle(),
@@ -357,6 +360,7 @@ export default function Discover() {
     } else {
       toast({ title: "Request sent!", description: "They'll see your profile and note." });
       setConnections(prev => ({ ...prev, [connectTarget.user_id]: { status: "pending", direction: "sent" } }));
+      awardKarma(user.id, "connection_sent");
     }
     setConnecting(null);
     setConnectTarget(null);
@@ -499,6 +503,7 @@ export default function Discover() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-foreground truncate">{profile.display_name || "User"}</h3>
                           {matchResult && <MatchScoreBadge score={matchResult.overall} />}
+                          <KarmaBadge score={profile.karma_score ?? 0} size="sm" showLabel={false} />
                         </div>
                         {profile.home_city && (
                           <p className="text-sm text-muted-foreground flex items-center gap-1">

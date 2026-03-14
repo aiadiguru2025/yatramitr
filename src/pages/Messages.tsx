@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, Loader2, UserCheck, UserX, Mail, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, Loader2, UserCheck, UserX, Mail, Phone, MessageCircle, Award } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePresence } from "@/hooks/usePresence";
 import PresenceDot from "@/components/PresenceDot";
 import BottomNav from "@/components/BottomNav";
 import { formatAirportShort } from "@/data/airports";
+import { awardKarma } from "@/lib/karma";
+import EndorsementDialog from "@/components/EndorsementDialog";
 
 interface Connection {
   id: string;
@@ -99,6 +101,10 @@ export default function Messages() {
   const [pendingTrips, setPendingTrips] = useState<Record<string, Trip>>({});
   const [pendingHelp, setPendingHelp] = useState<Record<string, HelpProfile>>({});
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
+
+  // Endorsement dialog state
+  const [endorseTarget, setEndorseTarget] = useState<{ id: string; name: string; avatar: string } | null>(null);
+  const [endorseDialogOpen, setEndorseDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -274,6 +280,10 @@ export default function Messages() {
       toast({ title: "Error", description: "Could not accept request", variant: "destructive" });
     } else {
       toast({ title: "Connected!", description: "You can now message each other." });
+      // Award karma to both parties
+      const req = pendingRequests.find(r => r.id === connectionId);
+      awardKarma(user.id, "connection_accepted");
+      if (req) awardKarma(req.requester, "connection_accepted_requester");
       setPendingRequests(prev => prev.filter(r => r.id !== connectionId));
       fetchConnections(); // Refresh accepted connections
     }
@@ -356,6 +366,17 @@ export default function Messages() {
                 <p className="text-xs text-muted-foreground">{otherUser.home_city}</p>
               )}
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-karma hover:bg-karma/10"
+              onClick={() => {
+                setEndorseTarget({ id: otherUserId, name: otherUser?.display_name || "User", avatar: otherUser?.avatar_url || "" });
+                setEndorseDialogOpen(true);
+              }}
+            >
+              <Award className="h-5 w-5" />
+            </Button>
           </div>
           {/* Contact info — only shown for accepted connections */}
           {otherPrivacy && (
@@ -479,6 +500,18 @@ export default function Messages() {
                         )}
                       </div>
                       {unread > 0 && <Badge variant="destructive">{unread}</Badge>}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-karma hover:bg-karma/10 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEndorseTarget({ id: otherId, name: otherUser?.display_name || "User", avatar: otherUser?.avatar_url || "" });
+                          setEndorseDialogOpen(true);
+                        }}
+                      >
+                        <Award className="h-4 w-4" />
+                      </Button>
                     </CardContent>
                   </Card>
                 );
@@ -576,6 +609,15 @@ export default function Messages() {
           )
         )}
       </div>
+      {endorseTarget && (
+        <EndorsementDialog
+          receiverId={endorseTarget.id}
+          receiverName={endorseTarget.name}
+          receiverAvatar={endorseTarget.avatar}
+          open={endorseDialogOpen}
+          onOpenChange={setEndorseDialogOpen}
+        />
+      )}
       <BottomNav />
     </div>
   );
